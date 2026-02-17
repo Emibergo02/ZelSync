@@ -1,0 +1,76 @@
+name: ZelTrade
+version: '${version}'
+main: dev.unnm3d.zelsync.ZelSync
+api-version: '1.21'
+folia-supported: true
+depend:
+  - Vault
+softdepend:
+  - RedisEconomy
+  - WorldGuard
+  - PlayerPoints
+  - Floodgate
+libraries:
+  - com.zaxxer:HikariCP:5.1.0
+  - org.xerial:sqlite-jdbc:3.46.0.0
+  - org.snakeyaml:snakeyaml-engine:2.7
+  - org.postgresql:postgresql:42.7.10
+permissions:
+  zeltrade.trade:
+    description: Open the trade GUI
+    default: true
+  zeltrade.ignore:
+    description: Ignore a trade
+    default: true
+  zeltrade.browse:
+    description: Browse the trades
+    default: false
+  zeltrade.setitem:
+    description: Set a gui item from your hand
+    default: false
+  zeltrade.getitem:
+    description: Get a gui item to your hand
+    default: false
+  zeltrade.inspect:
+    description: Inspect a item
+    default: false
+  zeltrade.reload:
+    description: Get a gui item to your hand
+    default: false
+  zeltrade.rate.showtrade:
+    description: Show the trade
+    default: true
+  zeltrade.rate.showplayer:
+    description: Show the player
+    default: true
+  zeltrade.rate:
+    description: Rate a trade
+    default: true
+  zeltrade.spectate:
+    description: Rate a trade
+    default: false
+  zeltrade.modify:
+    description: Rate a trade
+    default: false
+  zeltrade.stresser:
+    description: Stress test the plugin
+    default: false
+  zeltrade.usecurrency.xp:
+    description: Use the xp currency
+    default: true
+  zeltrade.usecurrency.default:
+    description: Use the default currency
+    default: true
+  zeltrade.admin:
+    description: Use the default currency
+    default: op
+    children:
+      zeltrade.browse: true
+      zeltrade.setitem: true
+      zeltrade.getitem: true
+      zeltrade.stresser: true
+      zeltrade.reload: true
+      zeltrade.modify: true
+      zeltrade.spectate: true
+      zeltrade.inspect: true
+      zeltrade.usecurrency.*: true
