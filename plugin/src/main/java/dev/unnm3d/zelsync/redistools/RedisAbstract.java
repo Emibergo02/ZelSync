@@ -20,8 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -36,6 +35,7 @@ public abstract class RedisAbstract {
     @Getter
     private final RedisClient lettuceClient;
     protected ExecutorServiceRouter executorServiceRouter;
+    protected ScheduledExecutorService scheduler;
 
     public RedisAbstract() {
         final Settings.RedisSettings redisSettings = Settings.instance().cache;
@@ -93,10 +93,12 @@ public abstract class RedisAbstract {
         this.pubSubConnections = new ConcurrentHashMap<>();
 
         this.executorServiceRouter = new ExecutorServiceRouter(redisSettings.credentials.threadPoolSize);
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(Thread.ofVirtual().factory());
 
         // 5. VERIFY CONNECTION
         try (var lettuceConnection = this.lettucePool.borrowObject()) {
             lettuceConnection.sync().ping();
+            ZelSync.getInstance().getLogger().info("Successfully connected to Redis server");
         } catch (Exception e) {
             throw new IllegalStateException(
               "Failed to establish connection with Redis. " +
@@ -197,6 +199,63 @@ public abstract class RedisAbstract {
             }
         }, id);
         return future;
+    }
+
+    public <T> CompletableFuture<T> getThreadSafeConnectionAsyncWithRetry(Function<RedisCommands<byte[], byte[]>, T> redisCallBack,
+                                                                          int id,
+                                                                          Function<T, Boolean> validator) {
+        final CompletableFuture<T> future = new CompletableFuture<>();
+        tryAgainConnectionAsync(
+          redisCallBack,
+          future,
+          id,
+          Settings.instance().cache.credentials.maxRetries,
+          Settings.instance().cache.credentials.retryBackoffMillis,
+          validator);
+        return future;
+    }
+
+    private  <T> void tryAgainConnectionAsync(Function<RedisCommands<byte[], byte[]>, T> redisCallBack,
+                                             CompletableFuture<T> toComplete,
+                                             int id,
+                                             int remainingRetries,
+                                             long retryDelayMillis,
+                                             Function<T, Boolean> validator) {
+
+        this.executorServiceRouter.route(() -> {
+            try (var connection = lettucePool.borrowObject()) {
+                T result = redisCallBack.apply(connection.sync());
+
+                if (validator.apply(result)) {
+                    toComplete.complete(result);
+                    return; // Success! Exit the runnable.
+                } else {
+                    throw new IllegalStateException("Validation failed for Redis command resultInt");
+                }
+            } catch (Exception e) {
+                if (remainingRetries > 0) {
+                    ZelSync.getInstance().getLogger().log(Level.WARNING,
+                      "Redis command failed, retrying... (" + remainingRetries + " attempts left)",e);
+
+                    scheduler.schedule(() ->
+                        tryAgainConnectionAsync(
+                          redisCallBack,
+                          toComplete,
+                          id,
+                          remainingRetries - 1,
+                          retryDelayMillis * 2,
+                          validator
+                        ),
+                      retryDelayMillis,
+                      TimeUnit.MILLISECONDS
+                    );
+
+                } else {
+                    ZelSync.getInstance().getLogger().log(Level.SEVERE, "Redis command failed after all attempts", e);
+                    toComplete.completeExceptionally(e);
+                }
+            }
+        }, id);
     }
 
     public void close() {

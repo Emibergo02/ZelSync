@@ -1,13 +1,9 @@
 package dev.unnm3d.zelsync.listeners;
 
 import io.papermc.paper.event.player.AsyncChatEvent;
-import io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
-import org.bukkit.event.Cancellable;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
+import org.bukkit.event.*;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -23,13 +19,15 @@ import java.util.UUID;
 
 
 public class LockListener implements Listener {
-    private JavaPlugin plugin;
-    private Player lockedPlayer;
+    private final Player lockedPlayer;
 
     public LockListener(JavaPlugin plugin, Player lockedPlayer) {
-        this.plugin = plugin;
         this.lockedPlayer = lockedPlayer;
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+
+    public void unregister() {
+        HandlerList.unregisterAll(this);
     }
 
     public void cancelEvent(@NotNull UUID playerUUID, @NotNull Cancellable event) {

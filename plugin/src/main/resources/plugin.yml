@@ -1,4 +1,4 @@
-name: ZelTrade
+name: ZelSync
 version: '${version}'
 main: dev.unnm3d.zelsync.ZelSync
 api-version: '1.21'
@@ -16,61 +16,61 @@ libraries:
   - org.snakeyaml:snakeyaml-engine:2.7
   - org.postgresql:postgresql:42.7.10
 permissions:
-  zeltrade.trade:
+  zelsync.trade:
     description: Open the trade GUI
     default: true
-  zeltrade.ignore:
+  zelsync.ignore:
     description: Ignore a trade
     default: true
-  zeltrade.browse:
+  zelsync.browse:
     description: Browse the trades
     default: false
-  zeltrade.setitem:
+  zelsync.setitem:
     description: Set a gui item from your hand
     default: false
-  zeltrade.getitem:
+  zelsync.getitem:
     description: Get a gui item to your hand
     default: false
-  zeltrade.inspect:
+  zelsync.inspect:
     description: Inspect a item
     default: false
-  zeltrade.reload:
+  zelsync.reload:
     description: Get a gui item to your hand
     default: false
-  zeltrade.rate.showtrade:
+  zelsync.rate.showtrade:
     description: Show the trade
     default: true
-  zeltrade.rate.showplayer:
+  zelsync.rate.showplayer:
     description: Show the player
     default: true
-  zeltrade.rate:
+  zelsync.rate:
     description: Rate a trade
     default: true
-  zeltrade.spectate:
+  zelsync.spectate:
     description: Rate a trade
     default: false
-  zeltrade.modify:
+  zelsync.modify:
     description: Rate a trade
     default: false
-  zeltrade.stresser:
+  zelsync.stresser:
     description: Stress test the plugin
     default: false
-  zeltrade.usecurrency.xp:
+  zelsync.usecurrency.xp:
     description: Use the xp currency
     default: true
-  zeltrade.usecurrency.default:
+  zelsync.usecurrency.default:
     description: Use the default currency
     default: true
-  zeltrade.admin:
+  zelsync.admin:
     description: Use the default currency
     default: op
     children:
-      zeltrade.browse: true
-      zeltrade.setitem: true
-      zeltrade.getitem: true
-      zeltrade.stresser: true
-      zeltrade.reload: true
-      zeltrade.modify: true
-      zeltrade.spectate: true
-      zeltrade.inspect: true
-      zeltrade.usecurrency.*: true
+      zelsync.browse: true
+      zelsync.setitem: true
+      zelsync.getitem: true
+      zelsync.stresser: true
+      zelsync.reload: true
+      zelsync.modify: true
+      zelsync.spectate: true
+      zelsync.inspect: true
+      zelsync.usecurrency.*: true

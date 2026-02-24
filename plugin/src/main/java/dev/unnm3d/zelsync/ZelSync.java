@@ -7,29 +7,14 @@ import de.exlll.configlib.ConfigurationException;
 import de.exlll.configlib.YamlConfigurations;
 import dev.unnm3d.zelsync.api.ZelSyncAPI;
 import dev.unnm3d.zelsync.api.ZelSyncProvider;
-import dev.unnm3d.zelsync.core.managers.*;
-import dev.unnm3d.zelsync.data.*;
-import dev.unnm3d.zeltrade.api.ZelTradeAPI;
-import dev.unnm3d.zeltrade.api.ZelTradeProvider;
-import dev.unnm3d.zeltrade.api.data.ICacheData;
-import dev.unnm3d.zeltrade.api.data.IStorageData;
-import dev.unnm3d.zeltrade.commands.*;
-import dev.unnm3d.zelsync.commands.providers.ItemFieldProvider;
-import dev.unnm3d.zelsync.commands.providers.LocalDateProvider;
 import dev.unnm3d.zelsync.commands.providers.TargetProvider;
-import dev.unnm3d.zelsync.commands.providers.UUIDProvider;
 import dev.unnm3d.zelsync.configs.GuiSettings;
 import dev.unnm3d.zelsync.configs.Messages;
 import dev.unnm3d.zelsync.configs.Settings;
-import dev.unnm3d.zelsync.core.NewTrade;
-import dev.unnm3d.zelsync.core.PlayerListener;
-import dev.unnm3d.zeltrade.core.managers.*;
-import dev.unnm3d.zeltrade.data.*;
-import dev.unnm3d.zelsync.hooks.IntegrationManager;
-import dev.unnm3d.zelsync.hooks.restrictions.WorldGuardHook;
-import dev.unnm3d.zelsync.integrity.IntegritySystem;
-import dev.unnm3d.zelsync.restriction.RestrictionService;
-import dev.unnm3d.zelsync.restriction.WorldRestriction;
+import dev.unnm3d.zelsync.core.managers.InventoryManager;
+import dev.unnm3d.zelsync.core.managers.PlayerListManager;
+import dev.unnm3d.zelsync.data.RedisDataManager;
+import dev.unnm3d.zelsync.listeners.JoinListener;
 import dev.unnm3d.zelsync.utils.Metrics;
 import io.lettuce.core.RedisConnectionException;
 import lombok.Getter;
@@ -38,7 +23,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
@@ -46,7 +30,6 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
-import java.util.UUID;
 
 public class ZelSync extends JavaPlugin implements ZelSyncAPI {
     @Getter
@@ -57,6 +40,10 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
     private Settings settings;
     @Getter
     private RedisDataManager dataCache;
+    @Getter
+    private InventoryManager inventoryManager;
+    @Getter
+    private PlayerListManager playerListManager;
     private Metrics metrics;
 
     public static void debug(String string) {
@@ -100,6 +87,7 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+        this.inventoryManager = new InventoryManager(this);
 
         //dataStorage = switch (settings.storageType) {
         //    case MYSQL -> new MySQLDatabase(this, this.settings.sqlDatabase);
@@ -107,7 +95,7 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
         //    case SQLITE -> new SQLiteDatabase(this);
         //};
         //((Database) dataStorage).connect();
-
+        this.playerListManager = new PlayerListManager(this);
         try {
             loadCommands();
         } catch (Exception e) {
@@ -115,7 +103,7 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
             getLogger().severe("Check your configuration and try again");
         }
 
-        getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
+        getServer().getPluginManager().registerEvents(new JoinListener(this), this);
 
         //bStats
         this.metrics = new Metrics(this, 28750);
@@ -136,20 +124,10 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
             dataCache.close();
         }
     }
+
     private void loadCommands() {
         CommandService drink = Drink.get(this);
         drink.bind(PlayerListManager.Target.class).toProvider(new TargetProvider(playerListManager));
-        drink.bind(LocalDateTime.class).toProvider(new LocalDateProvider(settings.dateFormat, settings.timeZone));
-        drink.bind(UUID.class).toProvider(new UUIDProvider());
-        drink.bind(Field.class).toProvider(new ItemFieldProvider());
-
-        applyAliasesAndRegister(drink, new TradeCommand(), "trade");
-        applyAliasesAndRegister(drink, new IgnoreCommand(), "trade-ignore");
-        applyAliasesAndRegister(drink, new BrowseTradeCommand(), "trade-browse");
-        applyAliasesAndRegister(drink, new SpectateTradeCommand(), "trade-spectate");
-        applyAliasesAndRegister(drink, new RateCommand(), "trade-rate");
-
-        drink.register(new TradeAdminCommand(), "zeltrade");
         drink.registerCommands();
     }
 
@@ -174,7 +152,7 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private void loadDebugFile() {
-        final File pluginDir = new File(getServer().getPluginsFolder(), "ZelTrade");
+        final File pluginDir = new File(getServer().getPluginsFolder(), "ZelSync");
         if (!pluginDir.exists()) {
             pluginDir.mkdir();
         }
@@ -196,7 +174,7 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
         Path configFile = new File(getDataFolder(), "config.yml").toPath();
         YamlConfigurations.save(configFile, Settings.class, Settings.instance(),
           ConfigLib.BUKKIT_DEFAULT_PROPERTIES.toBuilder()
-            .header("ZelTrade config")
+            .header("zelsync config")
             .footer("Authors: Unnm3d")
             .charset(StandardCharsets.UTF_8)
             .build()

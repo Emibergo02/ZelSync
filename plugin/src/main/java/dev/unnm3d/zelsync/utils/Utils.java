@@ -33,7 +33,7 @@ public class Utils {
 
     public byte[] serialize(ItemStack... items) {
         try {
-            return compress(ItemStack.serializeItemsAsBytes(items), CompressionLevel.SEND);
+            return ItemStack.serializeItemsAsBytes(items);
         } catch (Exception exception) {
             exception.printStackTrace();
             return new byte[0];
@@ -42,7 +42,7 @@ public class Utils {
 
     public ItemStack[] deserialize(byte[] source) {
         try {
-            return ItemStack.deserializeItemsFromBytes(decompress(source));
+            return ItemStack.deserializeItemsFromBytes(source);
         } catch (Exception exception) {
             ZelSync.getInstance().getLogger().log(Level.SEVERE, "Error during item array decompression: " +
               "you probably need to erase your archived trades table if you updated the plugin to a new version. Fix this issue with " +

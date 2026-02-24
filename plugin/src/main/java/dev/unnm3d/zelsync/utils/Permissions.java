@@ -4,8 +4,8 @@ import lombok.Getter;
 
 @Getter
 public enum Permissions {
-    MODIFY_TRADE("zeltrade.modify"),
-    USE_CURRENCY_PREFIX("zeltrade.usecurrency."),
+    MODIFY_TRADE("zelsync.modify"),
+    USE_CURRENCY_PREFIX("zelsync.usecurrency."),
 
     ;
 

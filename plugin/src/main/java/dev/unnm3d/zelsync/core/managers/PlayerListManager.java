@@ -1,8 +1,6 @@
 package dev.unnm3d.zelsync.core.managers;
 
 import dev.unnm3d.zelsync.ZelSync;
-import dev.unnm3d.zeltrade.api.core.managers.IPlayerListManager;
-import dev.unnm3d.zelsync.utils.License;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.HumanEntity;
@@ -34,20 +32,6 @@ public class PlayerListManager {
                 plugin.getDataCache().publishPlayerList(tempList);
             tempList.forEach(s -> onlinePlayerList.put(s, System.currentTimeMillis()));
         }, 0L, 3L, TimeUnit.SECONDS);//Every 3 secs
-
-        License.getLicenseById().validCheck();
-
-        plugin.getDataStorage().loadNameUUIDs()
-          .thenAccept(map -> {
-              //Allow the plugin to load the players that are already online
-              plugin.getServer().getOnlinePlayers().forEach(player ->
-                map.put(player.getName(), player.getUniqueId())
-              );
-              nameUUIDs.clear();
-              nameUUIDs.putAll(map);
-
-              plugin.getLogger().info("Loaded " + map.size() + " nameUUIDs from database");
-          });
 
     }
 

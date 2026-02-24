@@ -3,7 +3,7 @@ plugins {
     id("maven-publish")
 }
 
-group = "dev.unnm3d.zeltrade"
+group = "dev.unnm3d.zelsync"
 version = "1.7"
 
 repositories {

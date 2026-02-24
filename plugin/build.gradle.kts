@@ -89,17 +89,17 @@ val shadowJarTask = tasks.named<ShadowJar>("shadowJar") {
         include(dependency("org.apache.commons:commons-pool2:.*"))
     }
 
-    relocate("de.exlll.configlib", "dev.unnm3d.zeltrade.libraries.configlib")
-    relocate("com.jonahseguin.drink", "dev.unnm3d.zeltrade.libraries.drink")
-    relocate("xyz.xenondevs.invui", "dev.unnm3d.zeltrade.libraries.invui")
-    relocate("xyz.xenondevs.inventoryaccess", "dev.unnm3d.zeltrade.libraries.inventoryaccess")
+    relocate("de.exlll.configlib", "dev.unnm3d.zelsync.libraries.configlib")
+    relocate("com.jonahseguin.drink", "dev.unnm3d.zelsync.libraries.drink")
+    relocate("xyz.xenondevs.invui", "dev.unnm3d.zelsync.libraries.invui")
+    relocate("xyz.xenondevs.inventoryaccess", "dev.unnm3d.zelsync.libraries.inventoryaccess")
 
-    relocate("reactor", "dev.unnm3d.zeltrade.libraries.reactor")
-    relocate("redis.clients", "dev.unnm3d.zeltrade.libraries.redisclient")
-    relocate("io.lettuce", "dev.unnm3d.zeltrade.libraries.lettuce")
-    relocate("io.netty", "dev.unnm3d.zeltrade.libraries.netty")
-    relocate("org.reactivestreams", "dev.unnm3d.zeltrade.libraries.reactivestreams")
-    relocate("org.apache.commons.pool2", "dev.unnm3d.zeltrade.libraries.commonspool2")
+    relocate("reactor", "dev.unnm3d.zelsync.libraries.reactor")
+    relocate("redis.clients", "dev.unnm3d.zelsync.libraries.redisclient")
+    relocate("io.lettuce", "dev.unnm3d.zelsync.libraries.lettuce")
+    relocate("io.netty", "dev.unnm3d.zelsync.libraries.netty")
+    relocate("org.reactivestreams", "dev.unnm3d.zelsync.libraries.reactivestreams")
+    relocate("org.apache.commons.pool2", "dev.unnm3d.zelsync.libraries.commonspool2")
 
 
     exclude("org/intellij/**", "org/jetbrains/**","org/slf4j/**", "colors.bin")
@@ -122,22 +122,22 @@ tasks.register<ProGuardTask>("obfuscate") {
     keepattributes("*Annotation*,Record,Signature,Exceptions")
 
     listOf(
-        "dev.unnm3d.zeltrade.api.**",
-        "dev.unnm3d.zeltrade.configs.**",
-        "dev.unnm3d.zeltrade.libraries.configlib.**",
-        "dev.unnm3d.zeltrade.libraries.drink.**",
-        "dev.unnm3d.zeltrade.libraries.inventoryaccess.**",
-        "dev.unnm3d.zeltrade.libraries.lettuce.**",
-        "dev.unnm3d.zeltrade.libraries.netty.**",
-        "dev.unnm3d.zeltrade.libraries.reactivestreams.**",
-        "dev.unnm3d.zeltrade.libraries.reactor.**",
-        "dev.unnm3d.zeltrade.libraries.commonspool2.**",
-        "dev.unnm3d.zeltrade.libraries.redisclient.**"
-//"dev.unnm3d.zeltrade.utils.Metrics",
+        "dev.unnm3d.zelsync.api.**",
+        "dev.unnm3d.zelsync.configs.**",
+        "dev.unnm3d.zelsync.libraries.configlib.**",
+        "dev.unnm3d.zelsync.libraries.drink.**",
+        "dev.unnm3d.zelsync.libraries.inventoryaccess.**",
+        "dev.unnm3d.zelsync.libraries.lettuce.**",
+        "dev.unnm3d.zelsync.libraries.netty.**",
+        "dev.unnm3d.zelsync.libraries.reactivestreams.**",
+        "dev.unnm3d.zelsync.libraries.reactor.**",
+        "dev.unnm3d.zelsync.libraries.commonspool2.**",
+        "dev.unnm3d.zelsync.libraries.redisclient.**"
+//"dev.unnm3d.zelsync.utils.Metrics",
     ).forEach { keep("class $it { *; }") }
 
-    keepnames("class dev.unnm3d.zeltrade.ZelTrade { public *; }")
-    keepnames("class dev.unnm3d.zeltrade.commands.** { public *; }")
+    keepnames("class dev.unnm3d.zelsync.zelsync { public *; }")
+    keepnames("class dev.unnm3d.zelsync.commands.** { public *; }")
 }
 
 tasks.named<Delete>("clean") {
