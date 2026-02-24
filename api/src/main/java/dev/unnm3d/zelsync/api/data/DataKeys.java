@@ -1,16 +1,6 @@
 package dev.unnm3d.zelsync.api.data;
 
 public enum DataKeys {
-
-    /**
-     * zsync:inv (HASHSET) UUID-SNAPSHOTID registers latest snapshot ID for a uuid
-     * zsync:p_lock<snapshot_id> registers the serialized snapshot
-     *
-     * zsync:inv<playerUUID> (HASHSET) SNAPSHOTID-SERIALIZED
-     * zsync:p_lock<playerUUID> LATEST SNAPSHOTID 0 missing, SNAPSHOTID, if negative is locked.
-     *
-     * How to set a shapshot as missing (0) or locked (-1)
-     */
     SYNC_INV("zsync:inv"),
     SYNC_INV_UPDATE("zsync:inv_up"),
     PLAYER_LOCK("zsync:p_lock:"),

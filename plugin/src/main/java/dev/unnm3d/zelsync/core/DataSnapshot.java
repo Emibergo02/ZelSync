@@ -1,6 +1,9 @@
 package dev.unnm3d.zelsync.core;
 
 import dev.unnm3d.zelsync.ZelSync;
+import dev.unnm3d.zelsync.core.contents.ContentFlag;
+import dev.unnm3d.zelsync.core.contents.ContentRegistry;
+import dev.unnm3d.zelsync.core.contents.SnapshotContent;
 import dev.unnm3d.zelsync.utils.Utils;
 import lombok.Getter;
 import org.bukkit.entity.Player;
@@ -18,7 +21,7 @@ public class DataSnapshot {
     private SaveCause saveCause;
     private long timestamp;
     private ContentFlag contentFlag;
-    private Map<ContentFlag.ContentType, DataContent<?>> contentMap;
+    private Map<Class<? extends SnapshotContent>, SnapshotContent> contentMap;
 
     public DataSnapshot(Player player, SaveCause saveCause) {
         this.serverId = ZelSync.getServerId();
@@ -26,10 +29,9 @@ public class DataSnapshot {
         this.timestamp = System.currentTimeMillis();
         this.contentFlag = ContentFlag.empty();
         this.contentMap = new HashMap<>();
-        for (ContentFlag.ContentType value : ContentFlag.ContentType.values()) {
-            if (value.getExtractor() == null) continue;
-            this.contentMap.put(value, value.getExtractor().apply(player));
-            this.contentFlag.with(value);
+        for (Class<? extends SnapshotContent> contentClass : ContentRegistry.getRegisteredContents()) {
+            this.contentMap.put(contentClass, ContentRegistry.get(contentClass).fromPlayer(player));
+            this.contentFlag.with(contentClass);
         }
     }
 
@@ -43,16 +45,16 @@ public class DataSnapshot {
             ZelSync.getInstance().getLogger()
               .info("ServerID: " + serverId + ", SaveCause: " + saveCause + ", Timestamp: " + timestamp + ", ContentFlag: " + contentFlag.toInt());
 
-            for (ContentFlag.ContentType content : contentFlag.getContents()) {
-                ZelSync.getInstance().getLogger().info("Attempting to read content: " + content.name() + " | Bytes left in stream: " + dis.available());
+            for (Class<? extends SnapshotContent> contentClass : contentFlag.getContents()) {
+                ZelSync.getInstance().getLogger().info("Attempting to read content: " + contentClass.getSimpleName() + " | Bytes left in stream: " + dis.available());
 
                 int length = dis.readInt();
                 byte[] contentBytes = new byte[length];
                 dis.readFully(contentBytes);
                 ZelSync.getInstance().getLogger()
-                  .info(content.name() + " content "+length+" bytes: " + Base64.getEncoder().encodeToString(contentBytes));
+                  .info(contentClass.getSimpleName() + " content "+length+" bytes: " + Base64.getEncoder().encodeToString(contentBytes));
 
-                this.contentMap.put(content, content.getDeserializer().apply(contentBytes));
+                this.contentMap.put(contentClass, ContentRegistry.get(contentClass).fromBytes(contentBytes));
             }
         } catch (IOException e) {
             ZelSync.getInstance().getLogger().log(Level.SEVERE, "Failed to deserialize DataSnapshot", e);
@@ -75,17 +77,17 @@ public class DataSnapshot {
             ZelSync.getInstance().getLogger()
               .info("ServerID: " + serverId + ", SaveCause: " + saveCause + ", Timestamp: " + timestamp + ", ContentFlag: " + contentFlag.toInt());
 
-            for (ContentFlag.ContentType content : contentFlag.getContents()) {
-                byte[] bytes = contentMap.get(content).serialize();
+            for (Class<? extends SnapshotContent> contentClass : contentFlag.getContents()) {
+                byte[] bytes = contentMap.get(contentClass).serialize();
                 dos.writeInt(bytes.length);
                 dos.write(bytes);
                 ZelSync.getInstance().getLogger()
-                  .info(content.name() + " content bytes length: " + bytes.length);
+                  .info(contentClass.getSimpleName() + " content bytes length: " + bytes.length);
             }
         } catch (IOException e) {
             ZelSync.getInstance().getLogger().log(Level.SEVERE, "Failed to serialize DataSnapshot", e);
         }
-        return Utils.compress(baos.toByteArray(), Utils.CompressionLevel.STORAGE);
+        return Utils.compress(baos.toByteArray());
     }
 
     @Getter

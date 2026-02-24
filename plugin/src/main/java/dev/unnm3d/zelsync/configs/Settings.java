@@ -10,7 +10,6 @@ import de.exlll.configlib.YamlConfigurations;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 
 @Configuration
 public class Settings {
@@ -34,41 +33,26 @@ public class Settings {
         return SETTINGS;
     }
 
-    public String licenseKey = "0000-0000-0000-0000";
-
-    @Comment({"Storage type for the plugin",
-      "MYSQL - MySQL or MariaDB storage",
-      "POSTGRESQL - POSTGRESQL storage",
-      "SQLITE - SQLite storage"})
-    public StorageType storageType = StorageType.SQLITE;
-
-    @Comment({"Cache type for the plugin",
-      "REDIS - Redis cache",
-      "PLUGIN_MESSAGE - Plugin message cache (not implemented yet)",
-      "MEMORY - Memory cache (RAM) (does not enable cross-server features)"})
-    public CacheType cacheType = CacheType.MEMORY;
-
-    @Comment({"Drivers usually are:",
-      "com.mysql.cj.jdbc.Driver for MySQL/MariaDB",
-      "org.postgresql.Driver for PostgreSQL"})
-    public SQLDatabase sqlDatabase = new SQLDatabase("localhost", 3306, "com.mysql.cj.jdbc.Driver",
-      "zelsync", "root", "password",
-      String.join("&",
-        "?autoReconnect=true", "useSSL=false", "useUnicode=true", "characterEncoding=UTF-8"),
-      10, 10, 1800000, 0, 5000);
-
     @Comment("Leave password or user empty if you don't have a password or user")
     public RedisSettings cache = new RedisSettings();
+    public SynchronizationSettings synchronization = new SynchronizationSettings(
+      true, // saveInventory
+      true, // saveEnderChest
+      true, // saveHealth
+      true, // saveFoodLevel
+      true, // saveExperience
+      true, // savePotionEffects
+      false // saveLocation
+    );
 
+    @Comment("Time in seconds after a snapshot is deleted from Redis, only the latest snapshot has no expiration time")
+    public int snapshotExpirationSeconds = 604800;
 
     public boolean debug = true;
     public boolean debugStrace = false;
 
-
-    public record SQLDatabase(String databaseHost, int databasePort, String driverClass,
-                              String databaseName, String databaseUsername, String databasePassword,
-                              String parameters, int maximumPoolSize, int minimumIdle,
-                              int maxLifetime, int keepAliveTime, int connectionTimeout) {
+    public record SynchronizationSettings(boolean saveInventory, boolean saveEnderChest, boolean saveHealth,
+                                          boolean saveFoodLevel,boolean saveExperience, boolean savePotionEffects, boolean saveLocation) {
     }
 
     @Configuration
@@ -140,18 +124,6 @@ public class Settings {
             public String password = "";
         }
 
-    }
-
-    public enum CacheType {
-        REDIS,
-        PLUGIN_MESSAGE,
-        MEMORY,
-    }
-
-    public enum StorageType {
-        MYSQL,
-        SQLITE,
-        POSTGRESQL,
     }
 
 }

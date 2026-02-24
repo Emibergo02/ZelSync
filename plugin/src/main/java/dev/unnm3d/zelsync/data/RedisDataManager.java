@@ -2,6 +2,7 @@ package dev.unnm3d.zelsync.data;
 
 import dev.unnm3d.zelsync.ZelSync;
 import dev.unnm3d.zelsync.api.data.DataKeys;
+import dev.unnm3d.zelsync.configs.Settings;
 import dev.unnm3d.zelsync.core.DataSnapshot;
 import dev.unnm3d.zelsync.core.QueryResult;
 import dev.unnm3d.zelsync.core.StoredSnapshot;
@@ -110,11 +111,13 @@ public class RedisDataManager extends RedisAbstract {
               .putLong(playerUUID.getLeastSignificantBits()).array();
             plugin.getLogger().info(Base64.getEncoder().encodeToString(dataSnapshot.serialize()));
             return connection.eval("""
-                local id=redis.call("INCR", KEYS[1])
-                redis.call("HSET",KEYS[2],id,ARGV[2])
-                redis.call("SET", KEYS[3], id)
-                redis.call("PUBLISH", KEYS[4], id)
-                return id
+                local previous=redis.call("GET", KEYS[3])
+                redis.call("HEXPIRE",KEYS[3],ARGV[3],"FIELDS","1",tostring(previous))
+                local newID=redis.call("INCR", KEYS[1])
+                redis.call("HSET",KEYS[2],newID,ARGV[2])
+                redis.call("SET", KEYS[3], newID)
+                redis.call("PUBLISH", KEYS[4], newID)
+                return newID
                 """, ScriptOutputType.INTEGER,
               new byte[][]{
                 DataKeys.COUNTER_GENERATOR.getKeyBytes(),//zsync:counter KEYS[1]
@@ -124,7 +127,7 @@ public class RedisDataManager extends RedisAbstract {
               },
               uuidBytes, // ARGV[1] = player UUID bytes for hash field
               dataSnapshot.serialize(), // ARGV[2] = serialized inventory data
-              "30".getBytes());// ARGV[3] = lock expiration time in seconds
+              String.valueOf(Settings.instance().snapshotExpirationSeconds).getBytes());// ARGV[3] = lock expiration time in seconds (a week)
         }, (int) playerUUID.getLeastSignificantBits());
     }
 

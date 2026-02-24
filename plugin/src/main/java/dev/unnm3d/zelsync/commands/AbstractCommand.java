@@ -1,7 +1,6 @@
 package dev.unnm3d.zelsync.commands;
 
 import dev.unnm3d.zelsync.ZelSync;
-import dev.unnm3d.zelsync.configs.Settings;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;

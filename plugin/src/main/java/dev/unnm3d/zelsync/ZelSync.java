@@ -28,7 +28,6 @@ import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.Date;
-import java.util.List;
 import java.util.Random;
 
 public class ZelSync extends JavaPlugin implements ZelSyncAPI {
@@ -107,8 +106,6 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
 
         //bStats
         this.metrics = new Metrics(this, 28750);
-        metrics.addCustomChart(new Metrics.SimplePie("storage_type", () -> this.settings.storageType.name()));
-        metrics.addCustomChart(new Metrics.SimplePie("cache_type", () -> this.settings.cacheType.name()));
         metrics.addCustomChart(new Metrics.SimplePie("player_count", () -> {
             int count = getServer().getOnlinePlayers().size();
             return count > 100 ? "100+" : count > 50 ? "50-100" : count > 20 ? "20-50" : count > 10 ? "10-20" : count > 5 ? "5-10" : "less than 5";

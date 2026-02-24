@@ -49,7 +49,7 @@ publishing {
     publications {
         create<MavenPublication>("mavenJavaApi") {
             groupId = rootProject.group.toString()
-            artifactId = rootProject.name.toString()
+            artifactId = rootProject.name
             version = rootProject.version.toString()
 
             artifact(tasks.named("jar"))
