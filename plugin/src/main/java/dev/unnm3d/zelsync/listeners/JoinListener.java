@@ -18,16 +18,17 @@ import java.util.logging.Level;
 public class JoinListener implements Listener {
     private final ZelSync plugin;
     private final ConcurrentHashMap<UUID, CompletableFuture<Void>> currentLoads;
+    private final ConcurrentHashMap<UUID, LockListener> lockListeners = new ConcurrentHashMap<>();
 
     public JoinListener(ZelSync plugin) {
         this.plugin = plugin;
         this.currentLoads = new ConcurrentHashMap<>();
     }
 
-
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         LockListener lockListener = new LockListener(plugin, event.getPlayer());
+        lockListeners.put(event.getPlayer().getUniqueId(), lockListener);
         currentLoads.put(event.getPlayer().getUniqueId(), plugin.getInventoryManager().loadInventory(event.getPlayer())
           .exceptionally(ex -> {
               plugin.getLogger().severe("Failed to load inventory for player " + event.getPlayer().getName() + ": " + ex.getMessage());
@@ -37,6 +38,7 @@ public class JoinListener implements Listener {
               );
               return null;
           }).thenAccept((lr) -> {
+              if (lr == null) return;
               lockListener.unregister();
               currentLoads.remove(event.getPlayer().getUniqueId());
           }));
@@ -45,6 +47,8 @@ public class JoinListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         if (currentLoads.containsKey(event.getPlayer().getUniqueId())) {
+            currentLoads.remove(event.getPlayer().getUniqueId());
+            lockListeners.remove(event.getPlayer().getUniqueId()).unregister();
             return;
         }
         final DataSnapshot snapshot = new DataSnapshot(event.getPlayer(), DataSnapshot.SaveCause.LOGOUT);
@@ -55,8 +59,6 @@ public class JoinListener implements Listener {
               plugin.getLogger().log(Level.SEVERE, "Failed to save inventory for player " + event.getPlayer().getName(), ex);
               return null;
           });
-        //plugin.getDataCache().setCheckout(event.getPlayer().getUniqueId());
-        //plugin.getDataCache().saveInv(event.getPlayer().getUniqueId(), event.getPlayer().getInventory().getContents());
     }
 
 }

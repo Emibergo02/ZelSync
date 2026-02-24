@@ -245,10 +245,6 @@ public abstract class DataContent<T> {
             content = extract(player);
         }
 
-        public EnderChestContent(ItemStack[] enderChestData) {
-            content = enderChestData;
-        }
-
         public EnderChestContent(byte[] bytes) {
             deserialize(bytes);
         }

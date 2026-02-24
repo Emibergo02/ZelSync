@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -201,7 +202,7 @@ public abstract class RedisAbstract {
         return future;
     }
 
-    public <T> CompletableFuture<T> getThreadSafeConnectionAsyncWithRetry(Function<RedisCommands<byte[], byte[]>, T> redisCallBack,
+    public <T> CompletableFuture<T> getThreadSafeConnectionAsyncWithRetry(BiFunction<RedisCommands<byte[], byte[]>, Integer, T> redisCallBack,
                                                                           int id,
                                                                           Function<T, Boolean> validator) {
         final CompletableFuture<T> future = new CompletableFuture<>();
@@ -215,7 +216,7 @@ public abstract class RedisAbstract {
         return future;
     }
 
-    private  <T> void tryAgainConnectionAsync(Function<RedisCommands<byte[], byte[]>, T> redisCallBack,
+    private <T> void tryAgainConnectionAsync(BiFunction<RedisCommands<byte[], byte[]>, Integer, T> redisCallBack,
                                              CompletableFuture<T> toComplete,
                                              int id,
                                              int remainingRetries,
@@ -224,7 +225,7 @@ public abstract class RedisAbstract {
 
         this.executorServiceRouter.route(() -> {
             try (var connection = lettucePool.borrowObject()) {
-                T result = redisCallBack.apply(connection.sync());
+                T result = redisCallBack.apply(connection.sync(), remainingRetries);
 
                 if (validator.apply(result)) {
                     toComplete.complete(result);
@@ -235,7 +236,7 @@ public abstract class RedisAbstract {
             } catch (Exception e) {
                 if (remainingRetries > 0) {
                     ZelSync.getInstance().getLogger().log(Level.WARNING,
-                      "Redis command failed, retrying... (" + remainingRetries + " attempts left)",e);
+                      "Redis command failed, retrying... (" + remainingRetries + " attempts left)", e);
 
                     scheduler.schedule(() ->
                         tryAgainConnectionAsync(

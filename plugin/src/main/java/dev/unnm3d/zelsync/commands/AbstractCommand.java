@@ -22,7 +22,7 @@ public class AbstractCommand {
             }
             cmdCooldown.values().removeIf(aLong -> aLong < System.currentTimeMillis());
         }
-        cmdCooldown.put(playerUUID, System.currentTimeMillis() + Settings.instance().commandCooldown);
+        //cmdCooldown.put(playerUUID, System.currentTimeMillis() + Settings.instance().commandCooldown);
         return false;
     }
 }

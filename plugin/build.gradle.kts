@@ -1,7 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import org.gradle.kotlin.dsl.buildscript
 import proguard.gradle.ProGuardTask
-import kotlin.text.set
 
 plugins {
     id("java")
@@ -44,6 +42,7 @@ dependencies {
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.9-SNAPSHOT")
     compileOnly("org.black_ixx:playerpoints:3.3.3")
     compileOnly("org.geysermc.floodgate:api:2.2.5-SNAPSHOT")
+    compileOnly("org.xerial.snappy:snappy-java:1.1.10.8")
 
     implementation("de.exlll:configlib-paper:4.6.4") {
         exclude(group = "org.snakeyaml", module = "snakeyaml-engine")
@@ -82,11 +81,11 @@ val shadowJarTask = tasks.named<ShadowJar>("shadowJar") {
     archiveClassifier.set("")
     minimize {
         include(dependency("io.lettuce:lettuce-core:.*"))
+        include(dependency("org.apache.commons:commons-pool2:.*"))
         include(dependency("io.netty:.*:.*"))
         include(dependency("io.projectreactor:reactor-core:.*"))
         include(dependency("org.reactivestreams:.*:.*"))
         include(dependency("xyz.xenondevs.invui:invui-core:.*"))
-        include(dependency("org.apache.commons:commons-pool2:.*"))
     }
 
     relocate("de.exlll.configlib", "dev.unnm3d.zelsync.libraries.configlib")

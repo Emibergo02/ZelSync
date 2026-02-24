@@ -38,5 +38,6 @@ public class GuiSettings {
         );
     }
 
+    public String playerListTitle = "&6&lPlayer List";
 
 }

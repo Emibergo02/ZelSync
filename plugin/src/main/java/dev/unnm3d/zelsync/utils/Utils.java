@@ -3,9 +3,11 @@ package dev.unnm3d.zelsync.utils;
 import dev.unnm3d.zelsync.ZelSync;
 import lombok.experimental.UtilityClass;
 import org.bukkit.inventory.ItemStack;
+import org.xerial.snappy.Snappy;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.util.logging.Level;
@@ -52,27 +54,21 @@ public class Utils {
     }
 
     public static byte[] compress(byte[] input, CompressionLevel level) {
-        try (ByteArrayInputStream bis = new ByteArrayInputStream(input);
-             DeflaterInputStream dis = new DeflaterInputStream(bis, new Deflater(level.level));
-             ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-
-            byte[] buffer = new byte[8192];
-            int len;
-
-            // Read compressed bytes from 'dis' and write them to 'bos'
-            while ((len = dis.read(buffer)) > 0) {
-                bos.write(buffer, 0, len);
-            }
-
-            return bos.toByteArray();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new byte[0];
+        try {
+            byte[] compressed = Snappy.compress(input);
+            ZelSync.getInstance().getLogger().info("Compressed data from " + input.length + " bytes to " + compressed.length);
+            return compressed;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
     public static byte[] decompress(byte[] compressedInput) {
-        return decompress(new ByteArrayInputStream(compressedInput));
+        try {
+            return Snappy.uncompress(compressedInput);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static byte[] decompress(InputStream compressedInput) {

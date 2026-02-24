@@ -131,15 +131,15 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
         drink.registerCommands();
     }
 
-    private void applyAliasesAndRegister(CommandService drink, Object commandInstance, String commandName) {
-        final List<String> aliases = settings.commandAliases.getOrDefault(commandName, List.of(commandName));
-        if (aliases.isEmpty()) {
-            getLogger().severe("No command or aliases found for " + commandName);
-            getLogger().severe("The command will not be registered");
-            return;
-        }
-        drink.register(commandInstance, aliases.getFirst(), aliases.subList(1, aliases.size()).toArray(new String[0]));
-    }
+    //private void applyAliasesAndRegister(CommandService drink, Object commandInstance, String commandName) {
+    //    final List<String> aliases = settings.commandAliases.getOrDefault(commandName, List.of(commandName));
+    //    if (aliases.isEmpty()) {
+    //        getLogger().severe("No command or aliases found for " + commandName);
+    //        getLogger().severe("The command will not be registered");
+    //        return;
+    //    }
+    //    drink.register(commandInstance, aliases.getFirst(), aliases.subList(1, aliases.size()).toArray(new String[0]));
+    //}
 
     public void loadYML() throws ConfigurationException {
         Path configFile = new File(getDataFolder(), "config.yml").toPath();
