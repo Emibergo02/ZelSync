@@ -11,7 +11,6 @@ import io.lettuce.core.ScriptOutputType;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -55,7 +54,7 @@ public class RedisDataManager extends RedisAbstract {
               //zsync:inv<playerUUID> (HASHSET) SNAPSHOTID-SERIALIZED
               //zsync:p_lock<playerUUID> LATEST SNAPSHOTID 0 missing, SNAPSHOTID, if negative is locked.
               String latestHandling = remainingTries == 0 ?
-                "if latest <= 0 then latest=-latest end" : //If last try, "force unlock" the inv and return that
+                "latest=math.abs(latest)" : //If last try, "force unlock" the inv and return that
                 "if latest < 0 then return {-1} end";
               final List<Object> result = connection.eval("""
                   local latest=tonumber(redis.call("GET", KEYS[1]))

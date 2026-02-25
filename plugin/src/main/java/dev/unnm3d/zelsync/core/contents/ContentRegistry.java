@@ -7,55 +7,83 @@ import java.util.*;
 
 public class ContentRegistry {
     private static final Map<Class<? extends SnapshotContent>, ContentFactory<? extends SnapshotContent>> factories = new HashMap<>();
-    private static final Map<Class<? extends SnapshotContent>, Byte> contentTypeIds = new LinkedHashMap<>();
+    private static final Map<Class<? extends SnapshotContent>, Integer> contentTypeIds = new LinkedHashMap<>();
 
     static {
         if (Settings.instance().synchronization.saveInventory())
-            register(
+            locallyRegister(
               SnapshotContent.InventoryContent.class,
               new SnapshotContent.InventoryContent.Factory(),
-              (byte) 1);
+              1);
         if (Settings.instance().synchronization.savePersistentDataContainer())
-            register(
+            locallyRegister(
               SnapshotContent.PersistentSnapshotContainerContent.class,
               new SnapshotContent.PersistentSnapshotContainerContent.Factory(),
-              (byte) 2
+              2
             );
         if (Settings.instance().synchronization.saveHealth())
-            register(
+            locallyRegister(
               SnapshotContent.HealthContent.class,
               new SnapshotContent.HealthContent.Factory(),
-              (byte) 4
+              4
             );
         if (Settings.instance().synchronization.saveFood())
-            register(
+            locallyRegister(
               SnapshotContent.FoodContent.class,
               new SnapshotContent.FoodContent.Factory(),
-              (byte) 8
+              8
             );
         if (Settings.instance().synchronization.saveExperience())
-            register(
+            locallyRegister(
               SnapshotContent.ExperienceContent.class,
               new SnapshotContent.ExperienceContent.Factory(),
-              (byte) 16
+              16
             );
         if (Settings.instance().synchronization.savePotionEffects())
-            register(
+            locallyRegister(
               SnapshotContent.EffectContent.class,
               new SnapshotContent.EffectContent.Factory(),
-              (byte) 32
+              32
             );
         if (Settings.instance().synchronization.saveEnderChest())
-            register(
+            locallyRegister(
               SnapshotContent.EnderChestContent.class,
               new SnapshotContent.EnderChestContent.Factory(),
-              (byte) 64
+              64
+            );
+        if (Settings.instance().synchronization.saveGamemode())
+            locallyRegister(
+              SnapshotContent.GamemodeContent.class,
+              new SnapshotContent.GamemodeContent.Factory(),
+              128
+            );
+        if (Settings.instance().synchronization.saveFlight())
+            locallyRegister(
+              SnapshotContent.FlightContent.class,
+              new SnapshotContent.FlightContent.Factory(),
+              256
+            );
+        if (Settings.instance().synchronization.saveLocation())
+            locallyRegister(
+              SnapshotContent.LocationContent.class,
+              new SnapshotContent.LocationContent.Factory(),
+              512
             );
     }
 
-    public static <T extends SnapshotContent> void register(Class<T> type, ContentFactory<T> factory, byte contentTypeId) {
+    private static <T extends SnapshotContent> void locallyRegister(Class<T> type, ContentFactory<T> factory, int contentFlagId) {
         factories.put(type, factory);
-        contentTypeIds.put(type, contentTypeId);
+        contentTypeIds.put(type, contentFlagId);
+    }
+
+    public static <T extends SnapshotContent> void register(Class<T> type, ContentFactory<T> factory, int contentFlagId) {
+        if (factories.containsKey(type)) {
+            throw new IllegalArgumentException("Content type already registered: " + type.getName());
+        }
+        if (contentFlagId <= 37768) {
+            throw new IllegalArgumentException("Content type ID must be greater than 37768 to avoid conflicts with built-in content types: " + contentFlagId);
+        }
+        locallyRegister(type, factory, contentFlagId);
     }
 
     @SuppressWarnings("unchecked")
@@ -63,8 +91,8 @@ public class ContentRegistry {
         return (ContentFactory<T>) factories.getOrDefault(type, new SnapshotContent.EmptyContent.Factory());
     }
 
-    public static byte getContentId(Class<? extends SnapshotContent> type) {
-        Byte id = contentTypeIds.get(type);
+    public static int getContentId(Class<? extends SnapshotContent> type) {
+        Integer id = contentTypeIds.get(type);
         if (id == null) {
             throw new IllegalArgumentException("No content type ID registered for class: " + type.getName());
         }

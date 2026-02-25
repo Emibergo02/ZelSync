@@ -139,7 +139,7 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
     //        getLogger().severe("The command will not be registered");
     //        return;
     //    }
-    //    drink.register(commandInstance, aliases.getFirst(), aliases.subList(1, aliases.size()).toArray(new String[0]));
+    //    drink.locallyRegister(commandInstance, aliases.getFirst(), aliases.subList(1, aliases.size()).toArray(new String[0]));
     //}
 
     public void loadYML() throws ConfigurationException {

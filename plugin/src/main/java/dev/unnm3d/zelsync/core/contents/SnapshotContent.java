@@ -2,16 +2,18 @@ package dev.unnm3d.zelsync.core.contents;
 
 import dev.unnm3d.zelsync.ZelSync;
 import dev.unnm3d.zelsync.utils.Utils;
+import io.papermc.paper.entity.TeleportFlag;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -322,6 +324,143 @@ public abstract class SnapshotContent { // implementors handle their own excepti
                     }
                 }
                 return new EffectContent(effects);
+            }
+        }
+    }
+
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    public static class GamemodeContent extends SnapshotContent {
+        private final GameMode gamemode;
+
+        @Override
+        public void apply(Player player) {
+            player.setGameMode(gamemode);
+        }
+
+        @Override
+        public byte[] serialize() {
+            ByteBuffer buffer = ByteBuffer.allocate(4);
+            buffer.putInt(gamemode.getValue());
+            return buffer.array();
+        }
+
+        public static class Factory implements ContentFactory<GamemodeContent> {
+            @Override
+            public GamemodeContent fromPlayer(Player player) {
+                return new GamemodeContent(player.getGameMode());
+            }
+
+            @Override
+            public GamemodeContent fromBytes(byte[] bytes) {
+                ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                return new GamemodeContent(GameMode.getByValue(buffer.getInt()));
+            }
+        }
+    }
+
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    public static class FlightContent extends SnapshotContent {
+        private final boolean canFly;
+        private final boolean isFlying;
+        private final float flySpeed;
+
+        @Override
+        public void apply(Player player) {
+            player.setAllowFlight(canFly);
+            player.setFlying(isFlying);
+            player.setFlySpeed(flySpeed);
+        }
+
+        @Override
+        public byte[] serialize() {
+            ByteBuffer buffer = ByteBuffer.allocate(2);
+            buffer.put((byte) (canFly ? 1 : 0));
+            buffer.put((byte) (isFlying ? 1 : 0));
+            buffer.putFloat(flySpeed);
+            return buffer.array();
+        }
+
+        public static class Factory implements ContentFactory<FlightContent> {
+            @Override
+            public FlightContent fromPlayer(Player player) {
+                return new FlightContent(player.getAllowFlight(), player.isFlying(), player.getFlySpeed());
+            }
+
+            @Override
+            public FlightContent fromBytes(byte[] bytes) {
+                ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                boolean canFly = buffer.get() == (byte) 1;
+                boolean isFlying = buffer.get() == (byte) 1;
+                float flySpeed = buffer.getFloat();
+                return new FlightContent(canFly, isFlying, flySpeed);
+            }
+        }
+    }
+
+
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    public static class LocationContent extends SnapshotContent {
+        @Nullable
+        private final World world;
+        private final double x, y, z;
+        private final float yaw, pitch;
+
+        @Override
+        public void apply(Player player) {
+            World tpWorld = world != null ? world : player.getWorld();
+            player.teleportAsync(
+              new Location(tpWorld, x, y, z, yaw, pitch),
+              PlayerTeleportEvent.TeleportCause.PLUGIN,
+              TeleportFlag.EntityState.RETAIN_PASSENGERS
+            );
+        }
+
+        @Override
+        public byte[] serialize() {
+            int worldNameLength = 0;
+            byte[] worldNameBytes;
+            if (world == null) {
+                ZelSync.getInstance().getLogger().severe("Failed to serialize Location: World is null");
+                worldNameBytes = new byte[0];
+            } else {
+                worldNameLength = world.getName().getBytes().length;
+                worldNameBytes = world.getName().getBytes();
+            }
+            ByteBuffer buffer = ByteBuffer.allocate(4 + worldNameLength + 8 + 8 + 8 + 4 + 4);
+            buffer.putInt(worldNameLength);
+            buffer.put(worldNameBytes);
+            buffer.putDouble(x);
+            buffer.putDouble(y);
+            buffer.putDouble(z);
+            buffer.putFloat(yaw);
+            buffer.putFloat(pitch);
+            return buffer.array();
+        }
+
+        public static class Factory implements ContentFactory<LocationContent> {
+            @Override
+            public LocationContent fromPlayer(Player player) {
+                Location loc = player.getLocation();
+                return new LocationContent(loc.getWorld(), loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
+            }
+
+            @Override
+            public LocationContent fromBytes(byte[] bytes) {
+                final ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                final int worldNameLength = buffer.getInt();
+                final byte[] worldNameBytes = new byte[worldNameLength];
+                buffer.get(worldNameBytes);
+                double x = buffer.getDouble();
+                double y = buffer.getDouble();
+                double z = buffer.getDouble();
+                float yaw = buffer.getFloat();
+                float pitch = buffer.getFloat();
+                final World world = Bukkit.getWorld(new String(worldNameBytes));
+                if (world == null) {
+                    ZelSync.getInstance().getLogger()
+                      .severe("Failed to deserialize Location: World not found: " + new String(worldNameBytes));
+                }
+                return new LocationContent(world, x, y, z, yaw, pitch);
             }
         }
     }

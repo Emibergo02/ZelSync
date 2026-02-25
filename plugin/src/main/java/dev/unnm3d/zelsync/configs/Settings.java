@@ -45,6 +45,8 @@ public class Settings {
       true, // saveFood
       true, // saveExperience
       true, // savePotionEffects
+      true, // saveGamemode
+      true, // saveFlight
       false // saveLocation
     );
 
@@ -57,7 +59,8 @@ public class Settings {
 
     public record SynchronizationSettings(boolean saveInventory,boolean savePersistentDataContainer, boolean saveEnderChest,
                                           boolean saveHealth, boolean saveFood, boolean saveExperience,
-                                          boolean savePotionEffects, boolean saveLocation) {
+                                          boolean savePotionEffects, boolean saveGamemode, boolean saveFlight,
+                                          boolean saveLocation) {
     }
 
     @Configuration
