@@ -42,17 +42,15 @@ public class DataSnapshot {
             this.timestamp = dis.readLong();
             this.contentFlag = ContentFlag.fromInt(dis.readInt());
             this.contentMap = new HashMap<>();
-            ZelSync.getInstance().getLogger()
-              .info("ServerID: " + serverId + ", SaveCause: " + saveCause + ", Timestamp: " + timestamp + ", ContentFlag: " + contentFlag.toInt());
 
             for (Class<? extends SnapshotContent> contentClass : contentFlag.getContents()) {
-                ZelSync.getInstance().getLogger().info("Attempting to read content: " + contentClass.getSimpleName() + " | Bytes left in stream: " + dis.available());
+                ZelSync.debug("Attempting to read content: " + contentClass.getSimpleName() + " | Bytes left in stream: " + dis.available());
 
                 int length = dis.readInt();
                 byte[] contentBytes = new byte[length];
                 dis.readFully(contentBytes);
-                ZelSync.getInstance().getLogger()
-                  .info(contentClass.getSimpleName() + " content "+length+" bytes: " + Base64.getEncoder().encodeToString(contentBytes));
+                ZelSync.debug(contentClass.getSimpleName() + " " + length+ " | " + Base64.getEncoder().encodeToString(contentBytes));
+
 
                 this.contentMap.put(contentClass, ContentRegistry.get(contentClass).fromBytes(contentBytes));
             }
@@ -74,15 +72,12 @@ public class DataSnapshot {
             dos.writeShort(saveCause.getId());
             dos.writeLong(timestamp);
             dos.writeInt(contentFlag.toInt());
-            ZelSync.getInstance().getLogger()
-              .info("ServerID: " + serverId + ", SaveCause: " + saveCause + ", Timestamp: " + timestamp + ", ContentFlag: " + contentFlag.toInt());
 
             for (Class<? extends SnapshotContent> contentClass : contentFlag.getContents()) {
                 byte[] bytes = contentMap.get(contentClass).serialize();
                 dos.writeInt(bytes.length);
                 dos.write(bytes);
-                ZelSync.getInstance().getLogger()
-                  .info(contentClass.getSimpleName() + " content bytes length: " + bytes.length);
+                ZelSync.debug(contentClass.getSimpleName() + " " + bytes.length+ " | " + Base64.getEncoder().encodeToString(bytes));
             }
         } catch (IOException e) {
             ZelSync.getInstance().getLogger().log(Level.SEVERE, "Failed to serialize DataSnapshot", e);

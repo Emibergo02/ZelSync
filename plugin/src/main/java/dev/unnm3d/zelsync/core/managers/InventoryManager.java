@@ -26,7 +26,7 @@ public class InventoryManager {
                 player.getScheduler().run(plugin, (task) -> {
                     if (player.isOnline()) {
                         storedSn.getDataSnapshot().getContentMap().values().forEach(content -> {
-                            plugin.getLogger().info("Applying content " + content.getClass().getSimpleName() + " to player " + player.getName());
+                            ZelSync.debug("Applying content " + content.getClass().getSimpleName() + " to player " + player.getName());
                             content.apply(player);
                         });
                         localCacheFuture.complete(storedSn);

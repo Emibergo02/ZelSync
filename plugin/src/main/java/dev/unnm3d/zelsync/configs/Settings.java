@@ -35,11 +35,14 @@ public class Settings {
 
     @Comment("Leave password or user empty if you don't have a password or user")
     public RedisSettings cache = new RedisSettings();
+
+
     public SynchronizationSettings synchronization = new SynchronizationSettings(
       true, // saveInventory
+      true, // savePersistentDataContainer
       true, // saveEnderChest
       true, // saveHealth
-      true, // saveFoodLevel
+      true, // saveFood
       true, // saveExperience
       true, // savePotionEffects
       false // saveLocation
@@ -49,10 +52,12 @@ public class Settings {
     public int snapshotExpirationSeconds = 604800;
 
     public boolean debug = true;
+    public boolean debugToConsole = true;
     public boolean debugStrace = false;
 
-    public record SynchronizationSettings(boolean saveInventory, boolean saveEnderChest, boolean saveHealth,
-                                          boolean saveFoodLevel,boolean saveExperience, boolean savePotionEffects, boolean saveLocation) {
+    public record SynchronizationSettings(boolean saveInventory,boolean savePersistentDataContainer, boolean saveEnderChest,
+                                          boolean saveHealth, boolean saveFood, boolean saveExperience,
+                                          boolean savePotionEffects, boolean saveLocation) {
     }
 
     @Configuration
@@ -109,7 +114,7 @@ public class Settings {
             public int maxRetries = 3;
 
             @Comment("Base backoff time in ms for retries (exponential backoff multiplier). (not implemented yet)")
-            public int retryBackoffMillis = 200;
+            public int retryBackoffMillis = 350;
         }
 
         @Comment("Options for if you're using Redis sentinel. Don't modify this unless you know what you're doing!")

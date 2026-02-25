@@ -47,6 +47,10 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
 
     public static void debug(String string) {
         if (Settings.instance().debug) {
+            if (Settings.instance().debugToConsole) {
+                getInstance().getLogger().info(string);
+            }
+
             try {
                 final FileWriter writer = new FileWriter(debugFile.getAbsoluteFile(), true);
                 writer.append("[")

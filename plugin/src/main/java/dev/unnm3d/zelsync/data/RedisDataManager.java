@@ -28,12 +28,7 @@ public class RedisDataManager extends RedisAbstract {
     }
 
     public void receiveMessage(String channel, byte[] messageBytes) {
-        if (channel.equals(DataKeys.SYNC_INV_UPDATE.toString())) {
-            String messageStr = new String(messageBytes);
-            plugin.getLogger().info("Received inventory update message: " + messageStr);
-
-
-        } else if (channel.equals(DataKeys.PLAYERLIST.toString())) {
+        if (channel.equals(DataKeys.PLAYERLIST.toString())) {
             String playerListStr = new String(messageBytes);
             List<String> playerList = Arrays.asList(playerListStr.split("§"));
             plugin.getPlayerListManager().updatePlayerList(playerList);
@@ -57,7 +52,6 @@ public class RedisDataManager extends RedisAbstract {
               byte[] uuidBytes = ByteBuffer.allocate(16)
                 .putLong(playerUUID.getMostSignificantBits())
                 .putLong(playerUUID.getLeastSignificantBits()).array();
-              long currentTime = System.currentTimeMillis();
               //zsync:inv<playerUUID> (HASHSET) SNAPSHOTID-SERIALIZED
               //zsync:p_lock<playerUUID> LATEST SNAPSHOTID 0 missing, SNAPSHOTID, if negative is locked.
               String latestHandling = remainingTries == 0 ?
@@ -77,18 +71,13 @@ public class RedisDataManager extends RedisAbstract {
                   DataKeys.SYNC_INV.append(uuidBytes), //zsync:inv<playerUUID> KEYS[2]
                 }
               );
-              plugin.getLogger().info("Elapsed time for inventory retrieval script: " + (System.currentTimeMillis() - currentTime) + "ms");
 
               long snapshotUniqueId = (Long) result.getFirst();
-              plugin.getLogger().info("Raw lock ID object: " + snapshotUniqueId);
               QueryResult queryResult = QueryResult.fromResultLong(snapshotUniqueId);
-              plugin.getLogger().info("Player " + playerUUID + " got inventory result: " + queryResult.toString());
 
               if (queryResult != QueryResult.SUCCESS) {
                   return new StoredSnapshot(snapshotUniqueId, null);
               }
-
-              plugin.getLogger().info(Base64.getEncoder().encodeToString((byte[]) result.get(1)));
               DataSnapshot snapshot = DataSnapshot.deserialize((byte[]) result.get(1));
 
               return new StoredSnapshot(snapshotUniqueId, snapshot);
@@ -109,10 +98,11 @@ public class RedisDataManager extends RedisAbstract {
             byte[] uuidBytes = ByteBuffer.allocate(16)
               .putLong(playerUUID.getMostSignificantBits())
               .putLong(playerUUID.getLeastSignificantBits()).array();
-            plugin.getLogger().info(Base64.getEncoder().encodeToString(dataSnapshot.serialize()));
             return connection.eval("""
                 local previous=redis.call("GET", KEYS[3])
-                redis.call("HEXPIRE",KEYS[3],ARGV[3],"FIELDS","1",tostring(previous))
+                if previous then
+                redis.call("HEXPIRE",KEYS[2],ARGV[3],"FIELDS","1",math.abs(tonumber(previous)))
+                end
                 local newID=redis.call("INCR", KEYS[1])
                 redis.call("HSET",KEYS[2],newID,ARGV[2])
                 redis.call("SET", KEYS[3], newID)
@@ -127,7 +117,7 @@ public class RedisDataManager extends RedisAbstract {
               },
               uuidBytes, // ARGV[1] = player UUID bytes for hash field
               dataSnapshot.serialize(), // ARGV[2] = serialized inventory data
-              String.valueOf(Settings.instance().snapshotExpirationSeconds).getBytes());// ARGV[3] = lock expiration time in seconds (a week)
+              String.valueOf(Settings.instance().snapshotExpirationSeconds).getBytes());// ARGV[3] = lock expiration time in seconds
         }, (int) playerUUID.getLeastSignificantBits());
     }
 

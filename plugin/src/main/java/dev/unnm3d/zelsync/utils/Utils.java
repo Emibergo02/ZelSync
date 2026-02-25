@@ -33,9 +33,7 @@ public class Utils {
 
     public static byte[] compress(byte[] input) {
         try {
-            byte[] compressed = Snappy.compress(input);
-            ZelSync.getInstance().getLogger().info("Compressed data from " + input.length + " bytes to " + compressed.length);
-            return compressed;
+            return Snappy.compress(input);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

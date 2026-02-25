@@ -4,6 +4,7 @@ import dev.unnm3d.zelsync.ZelSync;
 import dev.unnm3d.zelsync.core.DataSnapshot;
 import net.kyori.adventure.text.Component;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
@@ -25,7 +26,7 @@ public class JoinListener implements Listener {
         this.currentLoads = new ConcurrentHashMap<>();
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onJoin(PlayerJoinEvent event) {
         LockListener lockListener = new LockListener(plugin, event.getPlayer());
         lockListeners.put(event.getPlayer().getUniqueId(), lockListener);
@@ -54,7 +55,7 @@ public class JoinListener implements Listener {
         final DataSnapshot snapshot = new DataSnapshot(event.getPlayer(), DataSnapshot.SaveCause.LOGOUT);
         plugin.getDataCache().saveSnapshotScript(event.getPlayer().getUniqueId(), snapshot)
           .thenAccept(result -> {
-              plugin.getLogger().info("The saved inventory for player " + event.getPlayer().getName() + " has ID " + result);
+              ZelSync.debug("The saved inventory for player " + event.getPlayer().getName() + " has ID " + result);
           }).exceptionally(ex -> {
               plugin.getLogger().log(Level.SEVERE, "Failed to save inventory for player " + event.getPlayer().getName(), ex);
               return null;

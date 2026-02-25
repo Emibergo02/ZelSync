@@ -22,6 +22,29 @@ public abstract class SnapshotContent { // implementors handle their own excepti
 
     public abstract byte[] serialize();
 
+    public static class EmptyContent extends SnapshotContent {
+        @Override
+        public void apply(Player player) {
+        }
+
+        @Override
+        public byte[] serialize() {
+            return new byte[0];
+        }
+
+        public static class Factory implements ContentFactory<EmptyContent> {
+            @Override
+            public EmptyContent fromPlayer(Player player) {
+                return new EmptyContent();
+            }
+
+            @Override
+            public EmptyContent fromBytes(byte[] bytes) {
+                return new EmptyContent();
+            }
+        }
+    }
+
     @Getter
     @ToString
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -122,9 +145,9 @@ public abstract class SnapshotContent { // implementors handle their own excepti
             public HealthContent fromBytes(byte[] bytes) {
                 ByteBuffer buffer = ByteBuffer.wrap(bytes);
                 double health = buffer.getDouble();
-                double maxHealth = buffer.getDouble();
+                double healthScale = buffer.getDouble();
                 double absorption = buffer.getDouble();
-                return new HealthContent(health, maxHealth, absorption);
+                return new HealthContent(health, healthScale, absorption);
             }
         }
     }
