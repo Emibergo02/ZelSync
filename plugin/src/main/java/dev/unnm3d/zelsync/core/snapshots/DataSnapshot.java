@@ -1,4 +1,4 @@
-package dev.unnm3d.zelsync.core;
+package dev.unnm3d.zelsync.core.snapshots;
 
 import dev.unnm3d.zelsync.ZelSync;
 import dev.unnm3d.zelsync.core.contents.ContentFlag;
@@ -24,15 +24,19 @@ public class DataSnapshot {
     private Map<Class<? extends SnapshotContent>, SnapshotContent> contentMap;
 
     public DataSnapshot(Player player, SaveCause saveCause) {
+        this(saveCause);
+        for (Class<? extends SnapshotContent> contentClass : ContentRegistry.getRegisteredContents()) {
+            this.contentMap.put(contentClass, ContentRegistry.get(contentClass).fromPlayer(player));
+            this.contentFlag.with(contentClass);
+        }
+    }
+
+    public DataSnapshot(SaveCause saveCause) {
         this.serverId = ZelSync.getServerId();
         this.saveCause = saveCause;
         this.timestamp = System.currentTimeMillis();
         this.contentFlag = ContentFlag.empty();
         this.contentMap = new HashMap<>();
-        for (Class<? extends SnapshotContent> contentClass : ContentRegistry.getRegisteredContents()) {
-            this.contentMap.put(contentClass, ContentRegistry.get(contentClass).fromPlayer(player));
-            this.contentFlag.with(contentClass);
-        }
     }
 
     public DataSnapshot(byte[] data) {
@@ -49,16 +53,33 @@ public class DataSnapshot {
                 int length = dis.readInt();
                 byte[] contentBytes = new byte[length];
                 dis.readFully(contentBytes);
-                ZelSync.debug(contentClass.getSimpleName() + " " + length+ " | " + Base64.getEncoder().encodeToString(contentBytes));
+                ZelSync.debug(contentClass.getSimpleName() + " " + length + " | " + Base64.getEncoder().encodeToString(contentBytes));
 
-
-                this.contentMap.put(contentClass, ContentRegistry.get(contentClass).fromBytes(contentBytes));
+                try {
+                    SnapshotContent content = ContentRegistry.get(contentClass).fromBytes(contentBytes);
+                    this.contentMap.put(contentClass, content);
+                } catch (Exception e) {
+                    ZelSync.getInstance().getLogger().log(Level.SEVERE, "Failed to deserialize content: " + contentClass.getSimpleName(), e);
+                    this.contentMap.put(contentClass, new SnapshotContent.EmptyContent());
+                }
             }
         } catch (IOException e) {
             ZelSync.getInstance().getLogger().log(Level.SEVERE, "Failed to deserialize DataSnapshot", e);
         }
     }
 
+    public void addContent(SnapshotContent content) {
+        if (this.contentMap.containsKey(content.getClass())) {
+            throw new IllegalStateException("Content of type " + content.getClass().getSimpleName() + " already exists in the snapshot");
+        }
+        this.contentFlag.with(content.getClass());
+        this.contentMap.put(content.getClass(), content);
+    }
+
+    public void removeContent(Class<? extends SnapshotContent> contentClass) {
+        this.contentFlag.without(contentClass);
+        this.contentMap.remove(contentClass);
+    }
 
     public static DataSnapshot deserialize(byte[] data) {
         return new DataSnapshot(Utils.decompress(data));
@@ -74,10 +95,16 @@ public class DataSnapshot {
             dos.writeInt(contentFlag.toInt());
 
             for (Class<? extends SnapshotContent> contentClass : contentFlag.getContents()) {
-                byte[] bytes = contentMap.get(contentClass).serialize();
+                byte[] bytes;
+                try {
+                    bytes = contentMap.get(contentClass).serialize();
+                } catch (Exception e) {
+                    ZelSync.getInstance().getLogger().log(Level.SEVERE, "Failed to serialize content: " + contentClass.getSimpleName(), e);
+                    bytes = new byte[0];
+                }
                 dos.writeInt(bytes.length);
                 dos.write(bytes);
-                ZelSync.debug(contentClass.getSimpleName() + " " + bytes.length+ " | " + Base64.getEncoder().encodeToString(bytes));
+                ZelSync.debug(contentClass.getSimpleName() + " " + bytes.length + " | " + Base64.getEncoder().encodeToString(bytes));
             }
         } catch (IOException e) {
             ZelSync.getInstance().getLogger().log(Level.SEVERE, "Failed to serialize DataSnapshot", e);
@@ -88,7 +115,8 @@ public class DataSnapshot {
     @Getter
     public enum SaveCause {
         LOGOUT((short) 1),
-        PERIODIC((short) 2);
+        PERIODIC((short) 2),
+        LOGIN((short) 3);
 
         private final short id;
 

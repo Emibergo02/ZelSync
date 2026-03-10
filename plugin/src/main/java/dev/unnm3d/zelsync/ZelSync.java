@@ -11,10 +11,10 @@ import dev.unnm3d.zelsync.commands.providers.TargetProvider;
 import dev.unnm3d.zelsync.configs.GuiSettings;
 import dev.unnm3d.zelsync.configs.Messages;
 import dev.unnm3d.zelsync.configs.Settings;
-import dev.unnm3d.zelsync.core.managers.InventoryManager;
 import dev.unnm3d.zelsync.core.managers.PlayerListManager;
-import dev.unnm3d.zelsync.data.RedisDataManager;
-import dev.unnm3d.zelsync.listeners.JoinListener;
+import dev.unnm3d.zelsync.listeners.SnapshotManager;
+import dev.unnm3d.zelsync.redistools.RedisDataManager;
+import dev.unnm3d.zelsync.utils.ExecutorServiceRouter;
 import dev.unnm3d.zelsync.utils.Metrics;
 import io.lettuce.core.RedisConnectionException;
 import lombok.Getter;
@@ -36,13 +36,12 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
     private static File debugFile;
     @Getter
     private static ZelSync instance;
-    private Settings settings;
     @Getter
     private RedisDataManager dataCache;
     @Getter
-    private InventoryManager inventoryManager;
-    @Getter
     private PlayerListManager playerListManager;
+    @Getter
+    private ExecutorServiceRouter executorServiceRouter;
     private Metrics metrics;
 
     public static void debug(String string) {
@@ -90,7 +89,6 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        this.inventoryManager = new InventoryManager(this);
 
         //dataStorage = switch (settings.storageType) {
         //    case MYSQL -> new MySQLDatabase(this, this.settings.sqlDatabase);
@@ -99,6 +97,11 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
         //};
         //((Database) dataStorage).connect();
         this.playerListManager = new PlayerListManager(this);
+
+        this.executorServiceRouter = new ExecutorServiceRouter(10);
+
+
+        getServer().getPluginManager().registerEvents(new SnapshotManager(this), this);
         try {
             loadCommands();
         } catch (Exception e) {
@@ -106,7 +109,6 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
             getLogger().severe("Check your configuration and try again");
         }
 
-        getServer().getPluginManager().registerEvents(new JoinListener(this), this);
 
         //bStats
         this.metrics = new Metrics(this, 28750);
@@ -118,6 +120,7 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
 
     @Override
     public void onDisable() {
+        executorServiceRouter.shutdown();
         if (metrics != null)
             metrics.shutdown();
         Drink.unregister(this);
@@ -144,7 +147,7 @@ public class ZelSync extends JavaPlugin implements ZelSyncAPI {
 
     public void loadYML() throws ConfigurationException {
         Path configFile = new File(getDataFolder(), "config.yml").toPath();
-        this.settings = Settings.initSettings(configFile);
+        Settings.initSettings(configFile);
         Path messagesFile = new File(getDataFolder(), "messages.yml").toPath();
         Messages.loadMessages(messagesFile);
         Path guisFile = new File(getDataFolder(), "guis.yml").toPath();

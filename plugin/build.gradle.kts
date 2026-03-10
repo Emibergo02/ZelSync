@@ -29,6 +29,7 @@ repositories {
     maven(url = "https://maven.enginehub.org/repo/")
     maven(url = "https://repo.rosewooddev.io/repository/public/")
     maven(url = "https://repo.opencollab.dev/main/")
+    maven(url = "https://repo.william278.net/releases")
 }
 
 dependencies {
@@ -43,6 +44,7 @@ dependencies {
     compileOnly("org.black_ixx:playerpoints:3.3.3")
     compileOnly("org.geysermc.floodgate:api:2.2.5-SNAPSHOT")
     compileOnly("org.xerial.snappy:snappy-java:1.1.10.8")
+    compileOnly("net.william278.husksync:husksync-bukkit:3.8.7+1.21.8")
 
     implementation("de.exlll:configlib-paper:4.6.4") {
         exclude(group = "org.snakeyaml", module = "snakeyaml-engine")
@@ -56,6 +58,8 @@ dependencies {
     implementation("xyz.xenondevs.invui:inventory-access-r24:1.49")
     implementation("xyz.xenondevs.invui:inventory-access-r25:1.49")
     implementation("xyz.xenondevs.invui:inventory-access-r26:1.49")
+    implementation("com.davidehrmann.vcdiff:vcdiff-core:0.1.1")
+    implementation("com.github.luben:zstd-jni:1.5.6-4")
 
     annotationProcessor("org.projectlombok:lombok:1.18.34")
 
@@ -101,7 +105,7 @@ val shadowJarTask = tasks.named<ShadowJar>("shadowJar") {
     relocate("org.apache.commons.pool2", "dev.unnm3d.zelsync.libraries.commonspool2")
 
 
-    exclude("org/intellij/**", "org/jetbrains/**","org/slf4j/**", "colors.bin")
+    exclude("org/intellij/**", "org/jetbrains/**", "org/slf4j/**", "colors.bin")
 }
 
 tasks.register<ProGuardTask>("obfuscate") {

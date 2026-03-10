@@ -2,7 +2,6 @@ package dev.unnm3d.zelsync.redistools;
 
 import dev.unnm3d.zelsync.ZelSync;
 import dev.unnm3d.zelsync.configs.Settings;
-import dev.unnm3d.zelsync.utils.ExecutorServiceRouter;
 import io.lettuce.core.*;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
@@ -35,7 +34,7 @@ public abstract class RedisAbstract {
     protected final GenericObjectPool<StatefulRedisConnection<byte[], byte[]>> lettucePool;
     @Getter
     private final RedisClient lettuceClient;
-    protected ExecutorServiceRouter executorServiceRouter;
+
     protected ScheduledExecutorService scheduler;
 
     public RedisAbstract() {
@@ -93,7 +92,6 @@ public abstract class RedisAbstract {
 
         this.pubSubConnections = new ConcurrentHashMap<>();
 
-        this.executorServiceRouter = new ExecutorServiceRouter(redisSettings.credentials.threadPoolSize);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(Thread.ofVirtual().factory());
 
         // 5. VERIFY CONNECTION
@@ -167,7 +165,7 @@ public abstract class RedisAbstract {
 
     public CompletableFuture<Optional<List<Object>>> executeTransaction(Consumer<RedisCommands<byte[], byte[]>> redisCommandsConsumer, int id) {
         final CompletableFuture<Optional<List<Object>>> future = new CompletableFuture<>();
-        this.executorServiceRouter.route(() -> {
+        ZelSync.getInstance().getExecutorServiceRouter().route(() -> {
             try (var connection = lettucePool.borrowObject()) {
                 final var syncCommands = connection.sync();
                 try {
@@ -192,7 +190,7 @@ public abstract class RedisAbstract {
 
     public <T> CompletableFuture<T> getThreadSafeConnectionAsync(Function<RedisCommands<byte[], byte[]>, T> redisCallBack, int id) {
         final CompletableFuture<T> future = new CompletableFuture<>();
-        this.executorServiceRouter.route(() -> {
+        ZelSync.getInstance().getExecutorServiceRouter().route(() -> {
             try (var connection = lettucePool.borrowObject()) {
                 future.complete(redisCallBack.apply(connection.sync()));
             } catch (Exception e) {
@@ -200,6 +198,14 @@ public abstract class RedisAbstract {
             }
         }, id);
         return future;
+    }
+
+    public <T> T getConnectionSync(Function<RedisCommands<byte[], byte[]>, T> redisCallBack) {
+        try (var connection = lettucePool.borrowObject()) {
+            return redisCallBack.apply(connection.sync());
+        } catch (Exception e) {
+            throw new RuntimeException("Error executing Redis command synchronously", e);
+        }
     }
 
     public <T> CompletableFuture<T> getThreadSafeConnectionAsyncWithRetry(BiFunction<RedisCommands<byte[], byte[]>, Integer, T> redisCallBack,
@@ -223,7 +229,7 @@ public abstract class RedisAbstract {
                                              long retryDelayMillis,
                                              Function<T, Boolean> validator) {
 
-        this.executorServiceRouter.route(() -> {
+        ZelSync.getInstance().getExecutorServiceRouter().route(() -> {
             try (var connection = lettucePool.borrowObject()) {
                 T result = redisCallBack.apply(connection.sync(), remainingRetries);
 
@@ -262,7 +268,6 @@ public abstract class RedisAbstract {
     public void close() {
         pubSubConnections.values().forEach(StatefulRedisPubSubConnection::close);
         ZelSync.getInstance().getLogger().info("Closing Lettuce PubSub connections");
-        executorServiceRouter.shutdown();
         lettucePool.close();
         lettuceClient.shutdown();
         ZelSync.getInstance().getLogger().info("Lettuce shutdown connection");

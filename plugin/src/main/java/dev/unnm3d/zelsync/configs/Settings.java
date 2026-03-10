@@ -53,8 +53,8 @@ public class Settings {
     @Comment("Time in seconds after a snapshot is deleted from Redis, only the latest snapshot has no expiration time")
     public int snapshotExpirationSeconds = 604800;
 
-    public boolean debug = true;
-    public boolean debugToConsole = true;
+    public boolean debug = false;
+    public boolean debugToConsole = false;
     public boolean debugStrace = false;
 
     public record SynchronizationSettings(boolean saveInventory,boolean savePersistentDataContainer, boolean saveEnderChest,

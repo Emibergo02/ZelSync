@@ -373,7 +373,7 @@ public abstract class SnapshotContent { // implementors handle their own excepti
 
         @Override
         public byte[] serialize() {
-            ByteBuffer buffer = ByteBuffer.allocate(2);
+            ByteBuffer buffer = ByteBuffer.allocate(1 + 1 + 4);
             buffer.put((byte) (canFly ? 1 : 0));
             buffer.put((byte) (isFlying ? 1 : 0));
             buffer.putFloat(flySpeed);

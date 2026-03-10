@@ -35,6 +35,10 @@ public class ContentFlag {
         this.value |= ContentRegistry.getContentId(flag);
     }
 
+    public void without(Class<? extends SnapshotContent> flag) {
+        this.value &= ~ContentRegistry.getContentId(flag);
+    }
+
     public boolean contains(Class<? extends SnapshotContent> flag) {
         int flagMask = ContentRegistry.getContentId(flag);
         return (this.value & flagMask) == flagMask;
